@@ -58,12 +58,12 @@ height,width,channel=getShape(initImage)
 roi=region(canny,height,width)
 
 
-
+"""
 showImage(initImage)
 showImage(gaussianBlur)
 showImage(canny)
 showImage(roi)
-
+"""
 
 #===========================================================================================
 # Hough Transform
@@ -282,7 +282,7 @@ def insertCircle(x,y, image):
 
 
 #===========================================================================================
-# Return the distance between the vanishing point and each line (the result it is an array)
+# Return the distance between the intersaction point and each line (the result it is an array)
 #===========================================================================================
 def dist(point, lines):
     dists = []
@@ -329,12 +329,45 @@ twoLines=selectTwoLines(leftLines,rightLines)
 line1=twoLines[0]
 line2=twoLines[1]
 
-x1a, y1a, x2a, y2a = line1
-x1b, y1b, x2b, y2b = line2
 
 insertCircle(getCrossPoint(line1,line2)[0],getCrossPoint(line1,line2)[1],line_image)
 showImage(line_image)
 
 
 getInliers(dist(getCrossPoint(line1,line2), newLines), newLines)
+showImage(line_image)
+
+
+#===========================================================================================
+# Iterate the process N time
+#===========================================================================================
+def iteration(lines, N):
+    inliersWithPoint=[]
+    iniersArray=[]
+
+    res={}
+    inliers_nbr=0
+    rightLines=selectRightLine(newLines)
+    leftLines=selectLeftLine(newLines)
+
+    for i in range(N):
+        twoLines=selectTwoLines(leftLines,rightLines)
+
+        line1=twoLines[0]
+        line2=twoLines[1]
+
+        distination = dist(getCrossPoint(line1,line2), lines)
+        inliers_nbr=getInliers(distination, lines)
+
+        print('=================================================================')
+        print(inliers_nbr)
+
+
+        insertCircle(getCrossPoint(line1,line2)[0],getCrossPoint(line1,line2)[1],line_image)
+        res[getCrossPoint(line1,line2)]=inliers_nbr
+    
+    print(res)
+    return res
+
+iteration=iteration(newLines,32)
 showImage(line_image)
