@@ -37,14 +37,21 @@ def showImage(image):
 
     
 #initImage=cv2.imread('images/6.jpg')
+#initImage=cv2.imread('images/15.jpg')
+#initImage=cv2.imread('images/13.jpg')
+#initImage=cv2.imread('images/14.jpg')
+initImage=cv2.imread('images/100.jpg')
 #initImage=cv2.imread('images/9.jpg')
 #initImage=cv2.imread('images/20.jpg')
-#initImage=cv2.imread('images/42.jpg')
+#initImage=cv2.imread('images/21.jpg')
+#
+# initImage=cv2.imread('images/42.jpg')
 #initImage=cv2.imread('images/25.jpg')
 #initImage=cv2.imread('images/32.jpg')
 #initImage=cv2.imread('images/79.jpg')
-#initImage=cv2.imread('images/46.jpg')
-initImage=cv2.imread('images/81.jpg')
+#
+# initImage=cv2.imread('images/46.jpg')
+#initImage=cv2.imread('images/81.jpg')
 
 
 
@@ -73,7 +80,7 @@ showImage(roi)
 rho = 1  # distance resolution in pixels of the Hough grid
 theta = np.pi / 180  # angular resolution in radians of the Hough grid
 threshold = 20  # minimum number of votes (intersections in Hough grid cell)
-min_line_length = 4  # minimum number of pixels making up a line
+min_line_length = 3  # minimum number of pixels making up a line
 max_line_gap = 20 # maximum gap in pixels between connectable line segments  ==> Maximum allowed gap between line segments to treat them as single line.
 
 
@@ -98,10 +105,11 @@ dest=cv2.addWeighted(initImage,1,line_image,1,0)
 #===========================================================================================
 # Find all the line that will be removed
 #===========================================================================================
-
 def detecteLine(lines):
+    buttomLine=0
     height=getShape(initImage)[0]
     width=getShape(initImage)[1]
+
     for line in lines:
         x1, y1, x2, y2 = line[0]
 
@@ -114,6 +122,13 @@ def detecteLine(lines):
             cv2.line(line_image, (x1, y1), (x2, y2), (0, 250, 0), 2)
             
 
+
+        #center bottum
+        if(y1 >= height-250 and y1 <= height and y2 >= height-250 and y2 <= height):
+            buttomLine=buttomLine+1
+
+            
+
         x=x2-x1
         y=y2-y1
 
@@ -122,16 +137,18 @@ def detecteLine(lines):
       
         if(abs(x) > 2*abs(y)):  
             cv2.line(line_image, (x1, y1), (x2, y2), (0, 250, 0), 2)
-            
-
-
+    print(buttomLine)
+    return buttomLine
+ 
 #===========================================================================================
 # Remove lines
 #===========================================================================================
 
-def clearLines(lines):
+def clearLines(lines,buttomLineNumber):
     height=getShape(initImage)[0]
     width=getShape(initImage)[1]
+
+    
     for line in lines:
         x1, y1, x2, y2 = line[0]
 
@@ -145,6 +162,10 @@ def clearLines(lines):
             cv2.line(line_image, (line[0][0], line[0][1]), (line[0][2], line[0][3]), (0, 0, 0), 2)
             line[0]=0,0,0,0
     
+    
+       
+       
+
         x=x2-x1
         y=y2-y1
 
@@ -155,6 +176,17 @@ def clearLines(lines):
         if(abs(x) > 2*abs(y)):  
             cv2.line(line_image, (line[0][0], line[0][1]), (line[0][2], line[0][3]), (0, 0, 0), 2)
             line[0]=0,0,0,0    
+
+
+    if(buttomLineNumber>150):
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            if(y1 >= height-300 and y1 <= height and y2 >= height-300 and y2 <= height):
+                cv2.line(line_image, (line[0][0], line[0][1]), (line[0][2], line[0][3]), (0, 0, 0), 2)
+                line[0]=0,0,0,0
+             
+
+
 
     return lines
 
@@ -172,10 +204,9 @@ def removeNullPoints(lines):
 #===========================================================================================
 # Apply the functions
 #===========================================================================================
-detecteLine(lines)
+detecteLine=detecteLine(lines)
 showImage(line_image)
-
-clearLines=clearLines(lines)
+clearLines=clearLines(lines,detecteLine)
 newLines=removeNullPoints(clearLines)
 showImage(line_image)
 
@@ -203,6 +234,7 @@ def selectLeftLine(lines):
     for line in lines:
         x1, y1, x2, y2 = line[0]
         if(x1<x2 and y1>y2):
+            cv2.line(line_image, (line[0][0], line[0][1]), (line[0][2], line[0][3]), (100, 250,250), 5)
             leftLines.append(line)
     return leftLines        
 
@@ -230,6 +262,24 @@ def selectTwoLines(leftLines,rightLines):
 
     return [leftLine,rightLine]
 
+
+#===========================================================================================
+# Select two random lines
+#===========================================================================================
+def selectTwoRandomLines(lines):
+    randNumber1=randrange(len(lines)-1)
+    randNumber2=randrange(len(lines)-1)
+
+    while randNumber2==randNumber1 :
+        randNumber2=randrange(len(lines)-1)
+
+    leftLine = lines[randNumber1][0]
+    rightLine = lines[randNumber2][0]
+
+    cv2.line(line_image, (leftLine[0], leftLine[1]), (leftLine[2], leftLine[3]), (0, 0,250), 5)
+    cv2.line(line_image, (rightLine[0], rightLine[1]), (rightLine[2], rightLine[3]), (0, 0,250), 5)
+
+    return [leftLine,rightLine]
 #===========================================================================================
 # Get the a, b ,c from a line equation 
 #===========================================================================================
@@ -315,7 +365,7 @@ def getInliers(distinations,lines):
             #print(distination)
             inlier_nbr=inlier_nbr+1
             x1,y1,x2,y2=lines[i][0]
-            print(lines[i][0])
+
             cv2.line(line_image, (x1,y1),  (x2,y2), (150, 200, 100), 5)
         i=i+1    
     return inlier_nbr
@@ -347,8 +397,8 @@ def iteration(lines, N):
 
     res={}
     inliers_nbr=0
-    rightLines=selectRightLine(newLines)
-    leftLines=selectLeftLine(newLines)
+    rightLines=selectRightLine(lines)
+    leftLines=selectLeftLine(lines)
 
     for i in range(N):
         twoLines=selectTwoLines(leftLines,rightLines)
@@ -359,15 +409,38 @@ def iteration(lines, N):
         distination = dist(getCrossPoint(line1,line2), lines)
         inliers_nbr=getInliers(distination, lines)
 
-        print('=================================================================')
-        print(inliers_nbr)
-
-
         insertCircle(getCrossPoint(line1,line2)[0],getCrossPoint(line1,line2)[1],line_image)
         res[getCrossPoint(line1,line2)]=inliers_nbr
     
-    print(res)
     return res
+
+#===========================================================================================
+# Select the vanishing point 
+#===========================================================================================
+
+def SelectVanishingPoint(iteration, blackImage, initImage):
+    vanishing_point = max(iteration.items(), key=operator.itemgetter(1))[0]
+    print("===========================")
+    print(vanishing_point)
+    print("===========================")
+
+    x,y = vanishing_point
+   
+    cv2.circle(blackImage, (int(x),int(y)), radius=9, color=(250, 0, 0), thickness=-1)
+    cv2.circle(initImage, (int(x),int(y)), radius=9, color=(20, 250, 20), thickness=-1)
+    
+    #first line from point to left side 
+    cv2.line(initImage, (220, 720), (int(x),int(y)), (0, 255, 255), 4)
+
+    #second line from point to right side 
+    cv2.line(initImage, (1050, 720), (int(x),int(y)), (0, 255, 255), 4)
+
+
 
 iteration=iteration(newLines,32)
 showImage(line_image)
+
+
+SelectVanishingPoint(iteration,line_image,initImage)
+showImage(line_image)
+showImage(initImage)
