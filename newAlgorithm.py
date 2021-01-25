@@ -85,10 +85,10 @@ roi=region(edge,height,width)
 
 
 
-#showImage(initImage)
-#showImage(gaussianBlur)
-#showImage(canny)
-#showImage(roi)
+showImage(initImage)
+showImage(gaussianBlur)
+showImage(edge)
+showImage(roi)
 
 
 #===========================================================================================
